@@ -2,16 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .domain import CompanyProfile, Evidence, LeadResult, RuleResult, WorkflowRunLog
 
-@dataclass(slots=True)
-class SourceLog:
-    source: str
-    query_or_url: str
-    status: str
-    notes: str = ""
 
-    def as_row(self) -> list[str]:
-        return [self.source, self.query_or_url, self.status, self.notes]
+class SourceLog(WorkflowRunLog):
+    pass
 
 
 @dataclass(slots=True)
