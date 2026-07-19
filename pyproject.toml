@@ -8,6 +8,11 @@ dependencies = [
   "google-api-python-client",
 ]
 
+[dependency-groups]
+dev = [
+  "pytest",
+]
+
 [project.scripts]
 prosway-acquisition = "prosway_acquisition.cli:main"
 
