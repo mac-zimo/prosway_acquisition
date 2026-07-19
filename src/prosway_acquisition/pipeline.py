@@ -4,8 +4,9 @@ from pathlib import Path
 
 from .api import collect_companies
 from .drive import upload_as_google_sheet, verify_google_sheet_export
+from .engine import run_growth_workflow
 from .workflow_configs import get_workflow
-from .workbook import workbook_counts, write_workbook
+from .workbook import workbook_counts, write_growth_workbook, write_workbook
 
 
 def build_local_workbook(
@@ -16,19 +17,25 @@ def build_local_workbook(
     enrichment_input: Path | None = None,
 ) -> dict[str, object]:
     workflow = get_workflow(workflow_name)
-    companies, logs = collect_companies(
-        max_pages_per_query=max_pages_per_query,
-        naf_codes=workflow.naf_codes,
-        employee_brackets=workflow.employee_brackets,
-        departments=workflow.departments,
-        target_per_naf=workflow.target_per_naf or None,
-        sample_limit=sample_limit if sample_limit is not None else workflow.sample_limit,
-    )
-    write_workbook(output, companies, logs)
+    if workflow.export_profile == "growth":
+        leads, logs = run_growth_workflow(workflow, enrichment_input=enrichment_input, sample_limit=sample_limit, max_pages_per_query=max_pages_per_query)
+        write_growth_workbook(output, leads, logs)
+        company_count = len(leads)
+    else:
+        companies, logs = collect_companies(
+            max_pages_per_query=max_pages_per_query,
+            naf_codes=workflow.naf_codes,
+            employee_brackets=workflow.employee_brackets,
+            departments=workflow.departments,
+            target_per_naf=workflow.target_per_naf or None,
+            sample_limit=sample_limit if sample_limit is not None else workflow.sample_limit,
+        )
+        write_workbook(output, companies, logs)
+        company_count = len(companies)
     return {
         "workflow": workflow.name,
         "local_xlsx": str(output),
-        "company_count": len(companies),
+        "company_count": company_count,
         "counts": workbook_counts(output),
         "enrichment_input": str(enrichment_input) if enrichment_input else None,
     }

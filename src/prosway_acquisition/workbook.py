@@ -7,6 +7,8 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from .config import ESN_NAF, INDUSTRY_NAF
+from .domain import LeadResult
+from .export_profiles import GROWTH_ANGLE_HEADERS, GROWTH_ENTERPRISE_HEADERS, GROWTH_SCORING_ROWS, GROWTH_SIGNAL_HEADERS
 from .models import Company, SourceLog
 from .scoring import roles_for, signal_type_for
 
@@ -131,6 +133,71 @@ def write_workbook(path: Path, companies: list[Company], logs: list[SourceLog]) 
     for row in build_log_rows(logs):
         wb["Sources_Logs"].append(row)
 
+    style_workbook(wb)
+    wb.save(path)
+    return path
+
+
+def write_growth_workbook(path: Path, leads: list[LeadResult], logs: list[SourceLog]) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    wb = Workbook()
+    sheet_names = ["Entreprises", "Signaux_croissance", "Angles_contact", "Scoring", "Sources_Logs"]
+    wb.active.title = sheet_names[0]
+    for name in sheet_names[1:]:
+        wb.create_sheet(name)
+
+    wb["Entreprises"].append(GROWTH_ENTERPRISE_HEADERS)
+    for lead in leads:
+        company = lead.company
+        wb["Entreprises"].append([
+            company.name,
+            company.siren,
+            company.employee_range,
+            company.city,
+            company.department,
+            company.region,
+            company.naf_code,
+            company.naf_label,
+            company.website,
+            company.source_urls[0] if company.source_urls else "",
+            lead.priority_score_0_100,
+            lead.priority_label,
+            lead.recommended_angle,
+            "oui" if lead.enrichment_needed else "non",
+        ])
+
+    wb["Signaux_croissance"].append(GROWTH_SIGNAL_HEADERS)
+    for lead in leads:
+        for evidence in lead.evidence:
+            wb["Signaux_croissance"].append([
+                lead.company.name,
+                lead.company.siren,
+                evidence.signal_type,
+                evidence.description,
+                evidence.source_name,
+                evidence.source_url,
+                evidence.confidence_0_100,
+                evidence.observed_at.isoformat(),
+            ])
+
+    wb["Angles_contact"].append(GROWTH_ANGLE_HEADERS)
+    for lead in leads:
+        why_now = "; ".join(e.description for e in lead.evidence[:3]) or "Aucun signal externe importé"
+        wb["Angles_contact"].append([
+            lead.company.name,
+            lead.company.siren,
+            "DRH; RRH; People/HR Lead; Direction générale",
+            lead.recommended_angle,
+            why_now,
+            "",
+            "",
+            "oui" if lead.enrichment_needed else "non",
+        ])
+
+    for row in GROWTH_SCORING_ROWS:
+        wb["Scoring"].append(row)
+    for row in build_log_rows(logs):
+        wb["Sources_Logs"].append(row)
     style_workbook(wb)
     wb.save(path)
     return path
