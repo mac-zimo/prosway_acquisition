@@ -18,3 +18,13 @@ def test_growth_workflow_uses_50_200_idf_brackets_without_31():
     assert "31" not in workflow.employee_brackets
     assert workflow.naf_codes is None
     assert workflow.export_profile == "growth"
+    assert [rule.name for rule in workflow.rules] == [
+        "employee_range_50_200",
+        "target_department",
+        "signal_multi_hiring",
+        "signal_fundraising_recent",
+        "signal_new_office",
+        "signal_headcount_growth",
+        "signal_strong_growth_claim",
+        "min_growth_signals_2",
+    ]

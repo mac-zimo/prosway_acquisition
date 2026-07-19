@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .config import ALL_TARGET_NAF, IDF_DEPARTMENTS, TARGET_PER_NAF
+from .rules import default_growth_rules
 from .workflows import WorkflowConfig
 
 WORKFLOWS = {
@@ -29,11 +30,7 @@ WORKFLOWS = {
         sample_limit=50,
         target_per_naf={},
         sources=("recherche_entreprises", "jobs_manual_csv", "news_manual", "linkedin_manual_csv"),
-        rules=(
-            "EmployeeRangeRule(50, 200)",
-            "DepartmentRule(IDF_DEPARTMENTS)",
-            "MinSignalsRule(min_count=2, signal_family='growth')",
-        ),
+        rules=default_growth_rules(IDF_DEPARTMENTS),
         export_profile="growth",
     ),
 }
